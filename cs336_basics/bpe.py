@@ -1,47 +1,22 @@
 from collections import defaultdict
+import heapq
 import regex as re
 import multiprocessing
-from pretokenization_example import find_chunk_boundaries
-
-PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-
-
-def pretokenize(chunk):
-    return re.findall(PAT, chunk)
+from tqdm import tqdm
+import json
+import pickle
+from cs336_basics.pretokenize import pre_tokenize_parallel
 
 
 def train_bpe(input_path, vocab_size, special_tokens):
-    merge = []
+    merges = []
     vocab = [bytes([i]) for i in range(256)]
-    vocab.append(special_tokens)
+    vocab += [s.encode("utf-8") for s in special_tokens]
 
     print("Pretokening .......")
-
-    token_counter = defaultdict(int)
-    with open(input_path, "rb") as f:
-        num_processes = 64
-        boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
-        # The following is a serial implementation, but you can parallelize this
-        # by sending each start/end pair to a set of processes.
-        for start, end in zip(boundaries[:-1], boundaries[1:]):
-            f.seek(start)
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
-            # Run pre-tokenization on your chunk and store the counts for each pre-token
-            pattern = "|".join(re.escape(tok) for tok in special_tokens)
-            split_chunk = re.split(pattern, chunk)
-            # split_chunk is a list of paragraph or list of story
-            with multiprocessing.Pool() as pool:
-                pretokenized_split_chunk = pool.map(pretokenize, split_chunk)
-            for tokens in pretokenized_split_chunk:
-                for token in tokens:
-                    utf8_encoded = token.encode("utf-8")
-                    key = tuple(
-                        bytes([x]) for x in utf8_encoded
-                    )  # key is a tuple of bytes
-                    token_counter[key] += 1
+    token_counter = pre_tokenize_parallel(input_path, special_tokens)
 
     print("Counting pairs .......")
-
     pair_counter = defaultdict(int)
     for token, count in token_counter.items():
         for i in range(len(token) - 1):
@@ -49,16 +24,10 @@ def train_bpe(input_path, vocab_size, special_tokens):
             pair_counter[pair] += count
 
     print("Training BPE .......")
-
-    epoch = 0
-    while len(vocab) < vocab_size:
-        epoch += 1
-        if epoch % 100 == 0:
-            print(epoch)
-
+    for epoch in tqdm(range(vocab_size)):
         max_pair = max(pair_counter.keys(), key=lambda pair: (pair_counter[pair], pair))
         merged_pair = max_pair[0] + max_pair[1]
-        merge.append(max_pair)
+        merges.append(max_pair)
         new_counter = {}
         for token, count in token_counter.items():
             new_token = []
@@ -84,5 +53,21 @@ def train_bpe(input_path, vocab_size, special_tokens):
             new_counter[tuple(new_token)] = count
         token_counter = new_counter
         vocab.append(merged_pair)
+        if len(vocab) >= vocab_size:
+            break
 
-    return merge, vocab
+    vocab = {i: x for i, x in enumerate(vocab)}
+    return vocab, merges
+
+
+if __name__ == "__main__":
+    special_tokens = ["<|endoftext|>"]
+    input_path = "./data/TinyStoriesV2-GPT4-train.txt"
+    vocab_size = 10000
+    vocab, merges = train_bpe(input_path, vocab_size, special_tokens)
+
+    with open(f"{input_path[:-4]}_BPE_vocab.pkl", "wb") as f:
+        pickle.dump(vocab, f)
+
+    with open(f"{input_path[:-4]}_BPE_merges.pkl", "wb") as f:
+        pickle.dump(merges, f)
