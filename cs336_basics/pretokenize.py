@@ -32,7 +32,7 @@ def pre_tokenize_chunk(args):
 
 
 def pre_tokenize_parallel(file_path: str | os.PathLike, special_tokens: list[str]):
-    num_processes = multiprocessing.cpu_count() * 4
+    num_processes = multiprocessing.cpu_count()
     pre_token_freq: Counter[tuple[bytes, ...]] = Counter()
 
     with open(file_path, "rb") as f:

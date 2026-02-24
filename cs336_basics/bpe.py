@@ -1,9 +1,5 @@
 from collections import defaultdict
-import heapq
-import regex as re
-import multiprocessing
 from tqdm import tqdm
-import json
 import pickle
 from cs336_basics.pretokenize import pre_tokenize_parallel
 

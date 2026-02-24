@@ -1,4 +1,5 @@
 import pickle
+import token
 from typing import Iterable, Iterator
 import regex as re
 
@@ -29,7 +30,6 @@ class Tokenizer:
         return cls(vocab, merges, special_tokens)
 
     def encode_token_bytes(self, token):
-        print("token:", token)
         BP_set = set(
             (token[i], token[i + 1]) for i in range(len(token) - 1)
         )  # for quick look-up
@@ -49,8 +49,6 @@ class Tokenizer:
                     if len(new_token) > 1:
                         BP_set.add((new_token[-2], new_token[-1]))
                 token = new_token
-
-        print("new token:", token)
         return [self.token_to_id[b] for b in token]
 
     def encode(self, text: str) -> list[int]:
@@ -70,10 +68,12 @@ class Tokenizer:
         return ids
 
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
-        pass
+        for text in iterable:
+            yield from self.encode(text)
 
     def decode(self, ids: list[int]) -> str:
-        pass
+        raw_bytes = b"".join(self.vocab[id] for id in ids if id in self.vocab)
+        return raw_bytes.decode("utf-8", errors="replace")
 
 
 if __name__ == "__main__":
@@ -86,3 +86,6 @@ if __name__ == "__main__":
 
     ids = tokenizer.encode("i am a pig")
     print(ids)
+    print(tokenizer.decode(ids))
+    ids = [10123, 123123, 1232, 10000000, 213, 10, 19]
+    print(tokenizer.decode(ids))
