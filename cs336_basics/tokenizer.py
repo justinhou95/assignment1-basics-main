@@ -14,7 +14,13 @@ class Tokenizer:
         self.vocab = vocab
         self.merges = merges
         self.token_to_id = {token: id for id, token in vocab.items()}
-        self.special_tokens = special_tokens
+        self.special_tokens = special_tokens or []
+        # Precompute merge priority for O(1) rank lookup during encoding.
+        # Lower rank = higher priority (applied first).
+        self.merge_rank: dict[tuple[bytes, bytes], int] = {
+            merge: i for i, merge in enumerate(merges)
+        }
+        self._encode_cache: dict[bytes, list[int]] = {}
 
     @classmethod
     def from_files(
@@ -29,42 +35,52 @@ class Tokenizer:
             merges = pickle.load(mf)
         return cls(vocab, merges, special_tokens)
 
-    def encode_token_bytes(self, token):
-        BP_set = set(
-            (token[i], token[i + 1]) for i in range(len(token) - 1)
-        )  # for quick look-up
-        for merge in self.merges:
-            if merge in BP_set:
-                new_token = []
-                BP_set.clear()
-                i = 0
-                while i < len(token):
-                    if i < len(token) - 1 and (token[i], token[i + 1]) == merge:
-                        new_token.append(token[i] + token[i + 1])
-                        i += 2
-                    else:
-                        new_token.append(token[i])
-                        i += 1
-
-                    if len(new_token) > 1:
-                        BP_set.add((new_token[-2], new_token[-1]))
-                token = new_token
-        return [self.token_to_id[b] for b in token]
+    def encode_token_bytes(self, token: bytes):
+        if token in self._encode_cache:
+            return self._encode_cache[token]
+        token_array = [bytes([x]) for x in token]
+        while len(token_array) >= 2:
+            best_rank = None
+            best_idx = -1
+            for i in range(len(token_array) - 1):
+                rank = self.merge_rank.get((token_array[i], token_array[i + 1]))
+                if rank is not None and (best_rank is None or rank < best_rank):
+                    best_rank = rank
+                    best_idx = i
+            if best_idx == -1:
+                break
+            token_array[best_idx : best_idx + 2] = [
+                token_array[best_idx] + token_array[best_idx + 1]
+            ]
+        result = [self.token_to_id[b] for b in token_array]
+        self._encode_cache[token] = result
+        return result
 
     def encode(self, text: str) -> list[int]:
         ids: list[int] = []  # encoded IDs
+        if self.special_tokens:
+            delimiter = (
+                "("
+                + "|".join(
+                    map(re.escape, sorted(self.special_tokens, key=lambda x: -len(x)))
+                )
+                + ")"
+            )
+            paragraphs = re.split(delimiter, text)
+        else:
+            paragraphs = [text]
 
-        delimiter = "|".join(map(re.escape, self.special_tokens))
-        paragraphs = re.split(delimiter, text)
         PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
         for paragraph in paragraphs:
-            pre_tokens = re.finditer(PAT, paragraph)
-            for pre_token in pre_tokens:
-                token_bytes = tuple(
-                    bytes([i]) for i in pre_token.group().encode("utf-8")
-                )
-                token_ids = self.encode_token_bytes(token_bytes)
-                ids += token_ids
+            if paragraph in self.special_tokens:
+                ids += [self.token_to_id[paragraph.encode("utf-8")]]
+            else:
+                pre_tokens = re.finditer(PAT, paragraph)
+                for pre_token in pre_tokens:
+                    token_ids = self.encode_token_bytes(
+                        pre_token.group().encode("utf-8")
+                    )
+                    ids += token_ids
         return ids
 
     def encode_iterable(self, iterable: Iterable[str]) -> Iterator[int]:
@@ -84,8 +100,8 @@ if __name__ == "__main__":
 
     tokenizer = Tokenizer.from_files(vocab_filepath, merges_filepath, special_tokens)
 
-    ids = tokenizer.encode("i am a pig")
-    print(ids)
-    print(tokenizer.decode(ids))
-    ids = [10123, 123123, 1232, 10000000, 213, 10, 19]
-    print(tokenizer.decode(ids))
+    # ids = tokenizer.encode("i am a pig")
+    # print(ids)
+    # print(tokenizer.decode(ids))
+    # ids = [10123, 123123, 1232, 10000000, 213, 10, 19]
+    # print(tokenizer.decode(ids))
