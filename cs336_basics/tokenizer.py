@@ -1,7 +1,11 @@
 import pickle
 import token
 from typing import Iterable, Iterator
+import numpy as np
 import regex as re
+from tqdm import tqdm
+
+from cs336_basics.pretokenization_example import find_chunk_boundaries
 
 
 class Tokenizer:
@@ -100,8 +104,84 @@ if __name__ == "__main__":
 
     tokenizer = Tokenizer.from_files(vocab_filepath, merges_filepath, special_tokens)
 
+    chunks = []
+    file_path = "./data/TinyStoriesV2-GPT4-train.txt"
+    num_processes = 1000
+    with open(file_path, "rb") as f:
+        boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+        pairs = list(zip(boundaries[:-1], boundaries[1:]))
+        for start, end in tqdm(pairs, total=len(pairs), desc="chunks"):
+            chunk = f.read(end - start).decode("utf-8", errors="ignore")
+            chunks.append(chunk)
+
+    data = np.fromiter(
+        tokenizer.encode_iterable(chunks),
+        dtype=np.uint16,
+    )
+
+    print(len(data))
+    data.tofile("./data/TinyStoriesV2-GPT4-train_tokens.bin")
+
+    chunks = []
+    file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+    num_processes = 1000
+    with open(file_path, "rb") as f:
+        boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+        pairs = list(zip(boundaries[:-1], boundaries[1:]))
+        for start, end in tqdm(pairs, total=len(pairs), desc="chunks"):
+            chunk = f.read(end - start).decode("utf-8", errors="ignore")
+            chunks.append(chunk)
+
+    data = np.fromiter(
+        tokenizer.encode_iterable(chunks),
+        dtype=np.uint16,
+    )
+
+    print(len(data))
+    data.tofile("./data/TinyStoriesV2-GPT4-valid_tokens.bin")
+
+    # file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+    # num_processes = 1000
+    # data = np.fromiter(
+    #     tokenizer.encode_iterable(iter_chunks(file_path, num_processes)),
+    #     dtype=np.uint16,
+    # )
+    # print(len(data))
+    # data.tofile("./data/TinyStoriesV2-GPT4-valid_tokens.bin")
+
     # ids = tokenizer.encode("i am a pig")
     # print(ids)
     # print(tokenizer.decode(ids))
     # ids = [10123, 123123, 1232, 10000000, 213, 10, 19]
     # print(tokenizer.decode(ids))
+
+    # def iter_chunks(file_path: str, num_processes: int) -> Iterator[str]:
+    #     with open(file_path, "rb") as f:
+    #         boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+    #         pairs = list(zip(boundaries[:-1], boundaries[1:]))
+    #         for start, end in tqdm(pairs, total=len(pairs), desc="chunks"):
+    #             yield f.read(end - start).decode("utf-8", errors="ignore")
+
+    # file_path = "./data/TinyStoriesV2-GPT4-train.txt"
+    # num_processes = 1000
+    # data = np.fromiter(
+    #     tokenizer.encode_iterable(iter_chunks(file_path, num_processes)),
+    #     dtype=np.uint16,
+    # )
+    # print(len(data))
+    # data.tofile("./data/TinyStoriesV2-GPT4-train_tokens.bin")
+
+    # file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+    # num_processes = 1000
+    # data = np.fromiter(
+    #     tokenizer.encode_iterable(iter_chunks(file_path, num_processes)),
+    #     dtype=np.uint16,
+    # )
+    # print(len(data))
+    # data.tofile("./data/TinyStoriesV2-GPT4-valid_tokens.bin")
+
+    # # ids = tokenizer.encode("i am a pig")
+    # # print(ids)
+    # # print(tokenizer.decode(ids))
+    # # ids = [10123, 123123, 1232, 10000000, 213, 10, 19]
+    # # print(tokenizer.decode(ids))
