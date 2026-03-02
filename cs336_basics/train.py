@@ -4,7 +4,7 @@ Training script for the CS336 Transformer language model.
 Example usage:
     python -m cs336_basics.train \
         --train_path data/train.npy \
-        --val_path data/val.npy \
+        --valid_path data/valid.npy \
         --vocab_size 50257 \
         --context_length 256 \
         --d_model 512 \
@@ -83,7 +83,7 @@ def train(args):
 
     # ── Data ──────────────────────────────────────────────────────────────────
     train_data = np.memmap(args.train_path, dtype=np.uint16, mode="r")
-    val_data = np.memmap(args.val_path, dtype=np.uint16, mode="r")
+    val_data = np.memmap(args.valid_path, dtype=np.uint16, mode="r")
 
     # ── Model ─────────────────────────────────────────────────────────────────
     model = TransformerLM(
@@ -196,35 +196,33 @@ def parse_args():
     p = argparse.ArgumentParser(description="Train a Transformer LM")
 
     # Data
-    p.add_argument(
-        "--train_path", required=True, help="Path to training .npy memmap file"
-    )
-    p.add_argument(
-        "--val_path", required=True, help="Path to validation .npy memmap file"
-    )
+    # p.add_argument("--train_path", default="./data/TinyStoriesV2-GPT4-train_tokens.bin")
+    # p.add_argument("--valid_path", default="./data/TinyStoriesV2-GPT4-valid_tokens.bin")
+    p.add_argument("--train_path", default="./data/owt_valid_tokens.bin")
+    p.add_argument("--valid_path", default="./data/owt_valid_tokens.bin")
 
     # Model
     p.add_argument("--vocab_size", type=int, default=10000)
     p.add_argument("--context_length", type=int, default=256)
     p.add_argument("--d_model", type=int, default=512)
-    p.add_argument("--num_layers", type=int, default=6)
-    p.add_argument("--num_heads", type=int, default=8)
-    p.add_argument("--d_ff", type=int, default=2048)
+    p.add_argument("--num_layers", type=int, default=4)
+    p.add_argument("--num_heads", type=int, default=16)
+    p.add_argument("--d_ff", type=int, default=1344)
     p.add_argument("--rope_theta", type=float, default=10000.0)
 
     # Optimizer
     p.add_argument("--lr_max", type=float, default=3e-4)
-    p.add_argument("--lr_min", type=float, default=1e-5)
-    p.add_argument("--warmup_iters", type=int, default=500)
+    p.add_argument("--lr_min", type=float, default=3e-5)
+    p.add_argument("--warmup_iters", type=int, default=1000)
     p.add_argument("--beta1", type=float, default=0.9)
-    p.add_argument("--beta2", type=float, default=0.999)
+    p.add_argument("--beta2", type=float, default=0.95)
     p.add_argument("--eps", type=float, default=1e-8)
     p.add_argument("--weight_decay", type=float, default=0.1)
     p.add_argument("--grad_clip", type=float, default=1.0)
 
     # Training
-    p.add_argument("--batch_size", type=int, default=32)
-    p.add_argument("--max_iters", type=int, default=100)
+    p.add_argument("--batch_size", type=int, default=128)
+    p.add_argument("--max_iters", type=int, default=10000)
     p.add_argument(
         "--device",
         type=str,
@@ -237,9 +235,9 @@ def parse_args():
 
     # Logging & checkpointing
     p.add_argument("--wandb_project", type=str, default="cs336-lm")
-    p.add_argument("--log_interval", type=int, default=10)
-    p.add_argument("--val_interval", type=int, default=10)
-    p.add_argument("--checkpoint_dir", type=str, default="checkpoints")
+    p.add_argument("--log_interval", type=int, default=100)
+    p.add_argument("--val_interval", type=int, default=500)
+    p.add_argument("--checkpoint_dir", type=str, default="./checkpoints")
     p.add_argument(
         "--resume", type=str, default=None, help="Path to checkpoint to resume from"
     )

@@ -32,25 +32,29 @@ def main():
     p = argparse.ArgumentParser(
         description="Generate text from a trained TransformerLM"
     )
-    p.add_argument("--ckpt", required=True, help="Path to checkpoint (.pt)")
-    p.add_argument("--vocab", required=True, help="Path to BPE vocab (.pkl)")
-    p.add_argument("--merges", required=True, help="Path to BPE merges (.pkl)")
-    p.add_argument("--prompt", default="Once upon a time")
-    p.add_argument("--max_new_tokens", type=int, default=200)
+    p.add_argument("--ckpt", default="./checkpoints/ckpt_final.pt")
+    p.add_argument("--vocab", default="./data/TinyStoriesV2-GPT4-train_BPE_vocab.pkl")
+    p.add_argument("--merges", default="./data/TinyStoriesV2-GPT4-train_BPE_merges.pkl")
+    p.add_argument(
+        "--prompt",
+        default="Once upon a time there was a little boy named Ben. Ben loved to explore the world around him. He saw many amazing things, like beautiful vases that were on display in a store. One day, Ben was walking through the store when he came across a very special vase. When Ben saw it he was amazed! He said, “Wow, that is a really amazing vase! Can I buy it?” The shopkeeper smiled and said, “Of course you can. You can take it home and show all your friends how amazing it is!” So Ben",
+    )
+
+    p.add_argument("--max_new_tokens", type=int, default=500)
     p.add_argument("--vocab_size", type=int, default=10000)
     p.add_argument("--context_length", type=int, default=256)
     p.add_argument("--d_model", type=int, default=512)
-    p.add_argument("--num_layers", type=int, default=6)
-    p.add_argument("--num_heads", type=int, default=8)
-    p.add_argument("--d_ff", type=int, default=2048)
+    p.add_argument("--num_layers", type=int, default=4)
+    p.add_argument("--num_heads", type=int, default=16)
+    p.add_argument("--d_ff", type=int, default=1344)
     p.add_argument("--rope_theta", type=float, default=10000.0)
     p.add_argument(
         "--device",
         type=str,
         default=(
-            "cuda" if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available()
-            else "cpu"
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         ),
     )
     args = p.parse_args()
