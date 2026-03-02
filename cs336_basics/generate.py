@@ -1,9 +1,10 @@
-import argparse
-
+from math import sqrt
+import numpy as np
+from einops import einsum, rearrange
 import torch
-from einops import rearrange
-
-from cs336_basics.module import TransformerLM, softmax
+from torch import nn
+from cs336_basics.module import TransformerLM
+from cs336_basics.module import softmax
 from cs336_basics.tokenizer import Tokenizer
 
 
@@ -18,7 +19,8 @@ def generate(
     model.eval()
     for _ in range(max_new_tokens):
         logits = model(tokens)  # (1, seq_len, vocab_size)
-        probs = softmax(logits[:, -1, :], dim=-1)  # (1, vocab_size)
+        v = logits[:, -1, :]  # (1, vocab_size) — last position
+        probs = softmax(v, dim=-1)  # (1, vocab_size)
         next_token = torch.multinomial(probs, num_samples=1)  # (1, 1)
         tokens = torch.cat([tokens, next_token], dim=1)
 
@@ -59,30 +61,28 @@ def main():
     )
     args = p.parse_args()
 
+    device = "mps" if torch.backends.mps.is_available() else "cpu"
     model = TransformerLM(
-        vocab_size=args.vocab_size,
-        context_length=args.context_length,
-        d_model=args.d_model,
-        num_layers=args.num_layers,
-        num_heads=args.num_heads,
-        d_ff=args.d_ff,
-        theta=args.rope_theta,
-        device=args.device,
+        vocab_size=10000,
+        context_length=256,
+        d_model=512,
+        num_layers=6,
+        num_heads=8,
+        d_ff=2048,
+        theta=10000.0,
+        device=device,
     )
-    checkpoint = torch.load(args.ckpt, weights_only=True, map_location=args.device)
+    ckpt_path = "./checkpoints/ckpt_final.pt"
+    checkpoint = torch.load(ckpt_path, weights_only=True)
     model.load_state_dict(checkpoint["model"])
 
     tokenizer = Tokenizer.from_files(
-        vocab_filepath=args.vocab,
-        merges_filepath=args.merges,
-        special_tokens=["<|endoftext|>"],
+        vocab_filepath="./data/TinyStoriesV2-GPT4-train_BPE_vocab.pkl",
+        merges_filepath="./data/TinyStoriesV2-GPT4-train_BPE_merges.pkl",
     )
-    eos_id = tokenizer.encode("<|endoftext|>")[0]
 
-    prompt_ids = torch.tensor(tokenizer.encode(args.prompt), device=args.device)
-    output_ids = generate(model, prompt_ids, args.max_new_tokens, eos_token_id=eos_id)
-    print(tokenizer.decode(output_ids.cpu().tolist()))
-
-
-if __name__ == "__main__":
-    main()
+    prompt_text = "Once upon a time"
+    prompt = torch.tensor(tokenizer.encode(prompt_text)).to(device)
+    output = generate(model, prompt, 100)
+    answer = tokenizer.decode(output.to("cpu").numpy())
+    print(answer)
