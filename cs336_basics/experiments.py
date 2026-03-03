@@ -52,19 +52,17 @@ def tokenize_main(special_tokens, input_path, file_path):
     return 0
 
 
-special_tokens = ["<|endoftext|>"]
-input_path = "./data/TinyStoriesV2-GPT4-train.txt"
-vocab_size = 10000
-# file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
-file_path = "./data/TinyStoriesV2-GPT4-train.txt"
-
 # special_tokens = ["<|endoftext|>"]
-# input_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+# input_path = "./data/TinyStoriesV2-GPT4-train.txt"
 # vocab_size = 10000
+# file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+# file_path = "./data/TinyStoriesV2-GPT4-train.txt"
 
-# special_tokens = ["<|endoftext|>"]
-# input_path = "./data/owt_valid.txt"
-# vocab_size = 32000
+special_tokens = ["<|endoftext|>"]
+input_path = "./data/owt_train.txt"
+vocab_size = 32000
+# file_path = "./data/owt_valid.txt"
+file_path = "./data/owt_train.txt"
 
 if __name__ == "__main__":
     # train_bpe_main(special_tokens, input_path, vocab_size)
