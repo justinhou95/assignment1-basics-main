@@ -1,7 +1,5 @@
 from ast import List
 from collections import defaultdict
-from email.policy import default
-from line_profiler import profile
 from tqdm import tqdm
 import pickle
 import heapq
@@ -71,10 +69,6 @@ class MaxHeapDict(dict):
         raise KeyError("MaxHeapDict is empty")
 
 
-<<<<<<< HEAD
-=======
-@profile
->>>>>>> origin/main
 def train_bpe(input_path, vocab_size, special_tokens):
     print("Pretokening .......")
     word_freq = pre_tokenize_parallel(input_path, special_tokens)
@@ -149,14 +143,8 @@ if __name__ == "__main__":
     # vocab_size = 10000
 
     special_tokens = ["<|endoftext|>"]
-<<<<<<< HEAD
     input_path = "./data/TinyStoriesV2-GPT4-valid.txt"
     vocab_size = 10000
-=======
-    input_path = "./data/owt_train.txt"
-    vocab_size = 32000
-
->>>>>>> origin/main
     vocab, merges = train_bpe(input_path, vocab_size, special_tokens)
 
     with open(f"{input_path[:-4]}_BPE_vocab.pkl", "wb") as f:
