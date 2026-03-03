@@ -44,7 +44,13 @@ from cs336_basics.optimizer import (
 )
 
 
-def get_batch(dataset: np.ndarray, batch_size: int, context_length: int, device: str, start: int | None = None):
+def get_batch(
+    dataset: np.ndarray,
+    batch_size: int,
+    context_length: int,
+    device: str,
+    start: int | None = None,
+):
     n = batch_size * context_length
     if start is None:
         start = np.random.randint(0, len(dataset) - n)
@@ -141,7 +147,13 @@ def train(args):
             group["lr"] = lr
 
         # Forward + backward
-        x, y = get_batch(train_data, args.batch_size, args.context_length, device, start=0 if args.overfit_batch else None)
+        x, y = get_batch(
+            train_data,
+            args.batch_size,
+            args.context_length,
+            device,
+            start=0 if args.overfit_batch else None,
+        )
         logits = model(x)
         loss = cross_entropy(
             rearrange(logits, "b s v -> (b s) v"), rearrange(y, "b s -> (b s)")
@@ -269,7 +281,12 @@ def parse_args():
     p.add_argument(
         "--resume", type=str, default=None, help="Path to checkpoint to resume from"
     )
-    p.add_argument("--overfit_batch", type=bool, default=False, help="Overfit to a single fixed batch (sanity check)")
+    p.add_argument(
+        "--overfit_batch",
+        type=bool,
+        default=False,
+        help="Overfit to a single fixed batch (sanity check)",
+    )
 
     args = p.parse_args()
 
