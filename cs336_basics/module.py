@@ -288,6 +288,7 @@ class TransformerLM(nn.Module):
         )
         self.ln_final = RMSNorm(d_model, device=device, dtype=dtype)
         self.lm_head = Linear(d_model, vocab_size, device=device, dtype=dtype)
+        self.context_length = context_length
 
     def forward(
         self,
@@ -303,24 +304,16 @@ class TransformerLM(nn.Module):
         x = self.lm_head(x)
         return x
 
-
-@torch.no_grad()
-def generate(
-    model: TransformerLM,
-    prompt: torch.Tensor,
-    max_new_tokens: int,
-    eos_token_id: int | None = None,
-) -> torch.Tensor:
-    tokens = rearrange(prompt, "s -> 1 s")
-    model.eval()
-    for _ in range(max_new_tokens):
-        logits = model(tokens)  # (1, seq_len, vocab_size)
-        v = logits[:, -1, :]  # (1, vocab_size) — last position
-        probs = softmax(v, dim=-1)  # (1, vocab_size)
-        next_token = torch.multinomial(probs, num_samples=1)  # (1, 1)
-        tokens = torch.cat([tokens, next_token], dim=1)
-
-        if eos_token_id is not None and next_token.item() == eos_token_id:
-            break
-
-    return rearrange(tokens, "1 s -> s")
+    @torch.no_grad()
+    def generate(self, tokens, max_new_tokens=200, eos_id=None):
+        tokens = rearrange(tokens, "s -> 1 s")
+        self.eval()
+        for _ in range(max_new_tokens):
+            ctx = tokens[:, -self.context_length :]  # works for any prompt length
+            logits = self.forward(ctx)  # (1, ctx_len, vocab_size)
+            probs = torch.softmax(logits[:, -1, :], dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+            tokens = torch.cat([tokens, next_token], dim=1)
+            if eos_id is not None and next_token.item() == eos_id:
+                break
+        return rearrange(tokens, "1 s -> s")
