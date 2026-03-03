@@ -213,13 +213,13 @@ def train(args):
 
 DATA_CONFIGS = {
     "story": {
-        "train_path": "./data/TinyStoriesV2-GPT4-train_tokens.npy",
-        "valid_path": "./data/TinyStoriesV2-GPT4-valid_tokens.npy",
+        "train_path": "./data/TinyStoriesV2-GPT4-train_tokens.bin",
+        "valid_path": "./data/TinyStoriesV2-GPT4-valid_tokens.bin",
         "vocab_size": 10000,
     },
     "owt": {
-        "train_path": "./data/owt_train_tokens.npy",
-        "valid_path": "./data/owt_valid_tokens.npy",
+        "train_path": "./data/owt_train_tokens.bin",
+        "valid_path": "./data/owt_valid_tokens.bin",
         "vocab_size": 32000,
     },
 }
@@ -251,10 +251,7 @@ def parse_args():
     p.add_argument("--lr_max", type=float, default=3e-4)
     p.add_argument("--lr_min", type=float, default=3e-5)
     p.add_argument("--warmup_iters", type=int, default=1000)
-    p.add_argument("--lr_min", type=float, default=3e-5)
-    p.add_argument("--warmup_iters", type=int, default=1000)
     p.add_argument("--beta1", type=float, default=0.9)
-    p.add_argument("--beta2", type=float, default=0.95)
     p.add_argument("--beta2", type=float, default=0.95)
     p.add_argument("--eps", type=float, default=1e-8)
     p.add_argument("--weight_decay", type=float, default=0.1)
