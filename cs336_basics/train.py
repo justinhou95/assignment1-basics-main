@@ -25,6 +25,7 @@ Example usage:
 """
 
 import argparse
+import datetime
 import os
 import time
 
@@ -80,6 +81,10 @@ def train(args):
 
     # ── Wandb ─────────────────────────────────────────────────────────────────
     wandb.init(project=args.wandb_project, config=vars(args))
+
+    date_str = datetime.datetime.now().strftime("%Y%m%d")
+    run_name = f"{date_str}_{args.data}_{wandb.run.name}"
+    args.checkpoint_dir = os.path.join(args.checkpoint_dir, run_name)
 
     # ── Data ──────────────────────────────────────────────────────────────────
     train_data = np.memmap(args.train_path, dtype=np.uint16, mode="r")
