@@ -7,6 +7,7 @@ wandb
 checkpoints
 notebooks/
 notebooks
+*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

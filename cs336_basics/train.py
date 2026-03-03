@@ -192,17 +192,35 @@ def train(args):
     wandb.finish()
 
 
+DATA_CONFIGS = {
+    "story": {
+        "train_path": "./data/TinyStoriesV2-GPT4-train_tokens.npy",
+        "valid_path": "./data/TinyStoriesV2-GPT4-valid_tokens.npy",
+        "vocab_size": 10000,
+    },
+    "owt": {
+        "train_path": "./data/owt_train_tokens.npy",
+        "valid_path": "./data/owt_valid_tokens.npy",
+        "vocab_size": 32000,
+    },
+}
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Train a Transformer LM")
 
     # Data
-    # p.add_argument("--train_path", default="./data/TinyStoriesV2-GPT4-train_tokens.bin")
-    # p.add_argument("--valid_path", default="./data/TinyStoriesV2-GPT4-valid_tokens.bin")
-    p.add_argument("--train_path", default="./data/owt_valid_tokens.bin")
-    p.add_argument("--valid_path", default="./data/owt_valid_tokens.bin")
+    p.add_argument(
+        "--data",
+        choices=["story", "owt"],
+        default="story",
+        help="Dataset to use: 'story' for TinyStoriesV2-GPT4, 'owt' for OpenWebText",
+    )
+    p.add_argument("--train_path", default=None, help="Override train data path")
+    p.add_argument("--valid_path", default=None, help="Override valid data path")
+    p.add_argument("--vocab_size", type=int, default=None)
 
     # Model
-    p.add_argument("--vocab_size", type=int, default=10000)
     p.add_argument("--context_length", type=int, default=256)
     p.add_argument("--d_model", type=int, default=512)
     p.add_argument("--num_layers", type=int, default=4)
@@ -245,7 +263,18 @@ def parse_args():
         "--resume", type=str, default=None, help="Path to checkpoint to resume from"
     )
 
-    return p.parse_args()
+    args = p.parse_args()
+
+    # Apply data config defaults (can be overridden by explicit flags)
+    cfg = DATA_CONFIGS[args.data]
+    if args.train_path is None:
+        args.train_path = cfg["train_path"]
+    if args.valid_path is None:
+        args.valid_path = cfg["valid_path"]
+    if args.vocab_size is None:
+        args.vocab_size = cfg["vocab_size"]
+
+    return args
 
 
 if __name__ == "__main__":
