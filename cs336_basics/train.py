@@ -272,8 +272,8 @@ def parse_args():
 
     # Logging & checkpointing
     p.add_argument("--wandb_project", type=str, default="cs336-lm")
-    p.add_argument("--log_interval", type=int, default=100)
-    p.add_argument("--val_interval", type=int, default=500)
+    p.add_argument("--log_interval", type=int, default=10)
+    p.add_argument("--val_interval", type=int, default=100)
     p.add_argument("--checkpoint_dir", type=str, default="./checkpoints")
     p.add_argument(
         "--resume", type=str, default=None, help="Path to checkpoint to resume from"
