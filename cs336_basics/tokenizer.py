@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
     chunks = []
     file_path = input_path
-    num_processes = 1000
+    num_processes = 10000
     with open(file_path, "rb") as f:
         boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
         pairs = list(zip(boundaries[:-1], boundaries[1:]))
@@ -123,23 +123,23 @@ if __name__ == "__main__":
     print(len(data))
     data.tofile("./data/TinyStoriesV2-GPT4-train_tokens.bin")
 
-    chunks = []
-    file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
-    num_processes = 1000
-    with open(file_path, "rb") as f:
-        boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
-        pairs = list(zip(boundaries[:-1], boundaries[1:]))
-        for start, end in tqdm(pairs, total=len(pairs), desc="chunks"):
-            chunk = f.read(end - start).decode("utf-8", errors="ignore")
-            chunks.append(chunk)
+    # chunks = []
+    # file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+    # num_processes = 1000
+    # with open(file_path, "rb") as f:
+    #     boundaries = find_chunk_boundaries(f, num_processes, b"<|endoftext|>")
+    #     pairs = list(zip(boundaries[:-1], boundaries[1:]))
+    #     for start, end in tqdm(pairs, total=len(pairs), desc="chunks"):
+    #         chunk = f.read(end - start).decode("utf-8", errors="ignore")
+    #         chunks.append(chunk)
 
-    data = np.fromiter(
-        tokenizer.encode_iterable(chunks),
-        dtype=np.uint16,
-    )
+    # data = np.fromiter(
+    #     tokenizer.encode_iterable(chunks),
+    #     dtype=np.uint16,
+    # )
 
-    print(len(data))
-    data.tofile("./data/TinyStoriesV2-GPT4-valid_tokens.bin")
+    # print(len(data))
+    # data.tofile("./data/TinyStoriesV2-GPT4-valid_tokens.bin")
 
     # special_tokens = []
     # input_path = "./data/owt_train.txt"

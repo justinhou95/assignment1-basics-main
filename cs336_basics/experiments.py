@@ -55,8 +55,8 @@ def tokenize_main(special_tokens, input_path, file_path):
 special_tokens = ["<|endoftext|>"]
 input_path = "./data/TinyStoriesV2-GPT4-train.txt"
 vocab_size = 10000
-file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
-# file_path = "./data/TinyStoriesV2-GPT4-train.txt"
+# file_path = "./data/TinyStoriesV2-GPT4-valid.txt"
+file_path = "./data/TinyStoriesV2-GPT4-train.txt"
 
 # special_tokens = ["<|endoftext|>"]
 # input_path = "./data/TinyStoriesV2-GPT4-valid.txt"
